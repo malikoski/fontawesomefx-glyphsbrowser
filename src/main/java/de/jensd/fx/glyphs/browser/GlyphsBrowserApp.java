@@ -30,7 +30,8 @@ public class GlyphsBrowserApp extends Application {
 
     static {
         try {
-            Font.loadFont(GlyphsBrowserApp.class.getResource(TTF_PATH).openStream(), 10.0d);
+           // Font.loadFont(GlyphsBrowserApp.class.getResource(TTF_PATH).openStream(), 10.0d);
+            Font.loadFonts(GlyphsBrowserApp.class.getModule().getResourceAsStream(TTF_PATH), 10.0d);
         } catch (IOException ex) {
             Logger.getLogger(GlyphsBrowserApp.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -42,7 +43,7 @@ public class GlyphsBrowserApp extends Application {
         model.setHostServices(getHostServices());
         GlyphsBrowser iconsBrowser = new GlyphsBrowser(model);
         Scene scene = new Scene(iconsBrowser, GlyphsBrowserAppModel.DEFAULT_WITH, GlyphsBrowserAppModel.DEFAULT_HEIGHT);
-        scene.getStylesheets().add(GlyphsBrowserAppModel.APP_STYLES);
+        scene.getStylesheets().add(getClass().getResource(GlyphsBrowserAppModel.APP_STYLES).toExternalForm());
         primaryStage.setTitle(GlyphsBrowserAppModel.APP_NAME + " " +  GlyphsBrowserAppModel.APP_VERSION);
         primaryStage.setScene(scene);
         primaryStage.show();

@@ -1,20 +1,21 @@
 /**
  * Copyright (c) 2016 Jens Deters http://www.jensd.de
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
- *
  */
 package de.jensd.fx.glyphs.browser;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -49,45 +50,45 @@ import javafx.scene.layout.VBox;
 public class GlyphsBrowser extends VBox {
 
     @FXML
-    private Label numberOfIconsLabel;
+    private Label                numberOfIconsLabel;
     @FXML
-    private Slider glyphSizeSlider;
+    private Slider               glyphSizeSlider;
     @FXML
-    private Label glyphSizeSliderValueLabel;
+    private Label                glyphSizeSliderValueLabel;
     @FXML
-    private Label fontNameLabel;
+    private Label                fontNameLabel;
     @FXML
-    private Label fontFamilyLabel;
+    private Label                fontFamilyLabel;
     @FXML
-    private Label fontVersionLabel;
+    private Label                fontVersionLabel;
     @FXML
-    private Label fontLicenseLabel;
+    private Label                fontLicenseLabel;
     @FXML
-    private Label fontReleaseDateLabel;
+    private Label                fontReleaseDateLabel;
     @FXML
-    private Hyperlink fontUrlLabel;
+    private Hyperlink            fontUrlLabel;
     @FXML
-    private Label fontWhatsNewLabel;
+    private Label                fontWhatsNewLabel;
     @FXML
-    private TextField glyphNameLabel;
+    private TextField            glyphNameLabel;
     @FXML
-    private TextField glyphCodeLabel;
+    private TextField            glyphCodeLabel;
     @FXML
-    private TextField glyphFactoryCodeLabel;
+    private TextField            glyphFactoryCodeLabel;
     @FXML
-    private Button copyCodeButton;
+    private Button               copyCodeButton;
     @FXML
-    private Button copyFactoryCodeButton;
+    private Button               copyFactoryCodeButton;
     @FXML
     private ListView<GlyphsPack> glyphsPackListView;
     @FXML
-    private GridView<GlyphIcon> glyphsGridView;
+    private GridView<GlyphIcon>  glyphsGridView;
     @FXML
-    private Pane glyphPreviewPane;
+    private Pane                 glyphPreviewPane;
     @FXML
-    private TextField searchBar;
+    private TextField            searchBar;
     @FXML
-    private Label searchBarResultsLabel;
+    private Label                searchBarResultsLabel;
 
     private final GlyphsBrowserAppModel model;
 
@@ -98,12 +99,14 @@ public class GlyphsBrowser extends VBox {
 
     private void init() {
         try {
-            ResourceBundle resourceBundle = ResourceBundle.getBundle(GlyphsBrowserAppModel.RESOURCE_BUNDLE);
-            URL fxmlURL = getClass().getResource(GlyphsBrowserAppModel.GLYPH_BROWSER_FXML);
-            FXMLLoader fxmlLoader = new FXMLLoader(fxmlURL, resourceBundle);
+            //ResourceBundle resourceBundle = ResourceBundle.getBundle(GlyphsBrowserAppModel.RESOURCE_BUNDLE, Locale.ROOT, GlyphsBrowser.class.getModule().getClassLoader());
+            ResourceBundle resourceBundle = ResourceBundle.getBundle("/i18n/Translations", Locale.ENGLISH, getClass().getModule());
+            InputStream    fxmlStream     = getClass().getModule().getResourceAsStream(GlyphsBrowserAppModel.GLYPH_BROWSER_FXML);
+            FXMLLoader     fxmlLoader     = new FXMLLoader();
+            fxmlLoader.setResources(resourceBundle);
             fxmlLoader.setRoot(this);
             fxmlLoader.setController(this);
-            fxmlLoader.load();
+            fxmlLoader.load(fxmlStream);
         } catch (IOException ex) {
             Logger.getLogger(GlyphsBrowser.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -131,12 +134,12 @@ public class GlyphsBrowser extends VBox {
             glyphsPackListView.getSelectionModel().selectFirst();
         });
         glyphsPackListView.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends GlyphsPack> observable, GlyphsPack oldValue, GlyphsPack newValue) -> {
-           
-        	//Reset Search Bar
-        	searchBar.setText("");
-        	
-        	//Update the Browser
-        	updateBrowser(glyphsPackListView.getSelectionModel().getSelectedItem());
+
+            //Reset Search Bar
+            searchBar.setText("");
+
+            //Update the Browser
+            updateBrowser(glyphsPackListView.getSelectionModel().getSelectedItem());
         });
         glyphsPackListView.getSelectionModel().selectFirst();
         model.selectedGlyphIconProperty().addListener((ObservableValue<? extends GlyphIcon> observable, GlyphIcon oldValue, GlyphIcon newValue) -> {
@@ -147,40 +150,40 @@ public class GlyphsBrowser extends VBox {
         });
         copyCodeButton.visibleProperty().bind(glyphCodeLabel.textProperty().isEmpty().not());
         copyFactoryCodeButton.visibleProperty().bind(glyphFactoryCodeLabel.textProperty().isEmpty().not());
-        
+
         //!!!!!!!!!Jens Deters add some comments ma BRO :) !!!!!!
-        
-		//== searchBar
-		searchBar.textProperty().addListener((observable , oldValue , newValue) -> {
-			//In case search bar has no text inside
-			if (searchBar.getText().isEmpty()) {
-				
-				//Reset all to visible
-				glyphsPackListView.getSelectionModel().getSelectedItem().getGlyphNodes().forEach(glyph -> glyph.setVisible(true));
-				
-				//Reset Search Bar Found Label
-				searchBarResultsLabel.setText("Found : [ All ]");
-				
-				//Show all the items on the GridView
-				updateBrowser(glyphsPackListView.getSelectionModel().getSelectedItem());							
-				
-			} else { //Let's do some search magic
-				glyphsPackListView.getSelectionModel().getSelectedItem().getGlyphNodes().forEach(glyph -> {
-					
-					//Glyph name contains search bar text ? [ No case sensitive ]
-					String searchValue = newValue.toLowerCase(); //Speed improvements
-					glyph.setVisible(glyph.getGlyphName().toLowerCase().contains(searchValue)); //visible only if name matches searchValue
-				});
-				
-				
-				//Add the new items
-				glyphsGridView.setItems(glyphsPackListView.getSelectionModel().getSelectedItem().getGlyphNodes().stream().filter(Node::isVisible)
-						.collect(Collectors.toCollection(FXCollections::observableArrayList)));
-				searchBarResultsLabel.setText("Found : [ " + glyphsGridView.getItems().size()+" ]");
-			}
-		});
-        
-        
+
+        //== searchBar
+        searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
+            //In case search bar has no text inside
+            if (searchBar.getText().isEmpty()) {
+
+                //Reset all to visible
+                glyphsPackListView.getSelectionModel().getSelectedItem().getGlyphNodes().forEach(glyph -> glyph.setVisible(true));
+
+                //Reset Search Bar Found Label
+                searchBarResultsLabel.setText("Found : [ All ]");
+
+                //Show all the items on the GridView
+                updateBrowser(glyphsPackListView.getSelectionModel().getSelectedItem());
+
+            } else { //Let's do some search magic
+                glyphsPackListView.getSelectionModel().getSelectedItem().getGlyphNodes().forEach(glyph -> {
+
+                    //Glyph name contains search bar text ? [ No case sensitive ]
+                    String searchValue = newValue.toLowerCase(); //Speed improvements
+                    glyph.setVisible(glyph.getGlyphName().toLowerCase().contains(searchValue)); //visible only if name matches searchValue
+                });
+
+
+                //Add the new items
+                glyphsGridView.setItems(glyphsPackListView.getSelectionModel().getSelectedItem().getGlyphNodes().stream().filter(Node::isVisible)
+                        .collect(Collectors.toCollection(FXCollections::observableArrayList)));
+                searchBarResultsLabel.setText("Found : [ " + glyphsGridView.getItems().size() + " ]");
+            }
+        });
+
+
     }
 
     private void showGlyphIconsDetails(GlyphIconInfo glyphIconInfo) {
@@ -219,7 +222,7 @@ public class GlyphsBrowser extends VBox {
             }
         }
         model.selectedGlyphIconProperty().set(glyphPack.getGlyphNodes().get(0));
-        
+
 //        //Lets check what's inside
 //        glyphPack.getGlyphNodes().forEach(glyph->{
 //        	System.out.println(glyph.getGlyphName());
@@ -232,7 +235,7 @@ public class GlyphsBrowser extends VBox {
         content.putString(model.selectedGlyphIconProperty().getValue().unicode());
         model.getClipboard().setContent(content);
     }
-    
+
     @FXML
     public void onCopyCode() {
         final ClipboardContent content = new ClipboardContent();

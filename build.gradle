@@ -1,5 +1,19 @@
-apply plugin: 'java'
-apply plugin: 'application'
+plugins {
+    id 'java'
+    id 'application'
+/*    id 'org.gradle.java.experimental-jigsaw' version '0.1.1'*/
+}
+
+
+apply plugin: 'idea'
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
+
+
+import java.util.regex.Matcher;
 
 repositories {
     jcenter()
@@ -7,6 +21,7 @@ repositories {
     mavenLocal()
 }
 
+/*
 task fatJar(type: Jar) {
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
@@ -16,30 +31,95 @@ task fatJar(type: Jar) {
         attributes 'Main-Class': 'de.jensd.fx.glyphs.browser.GlyphsBrowserApp'
     }
 }
+*/
 
-version '1.3.0'
+version '1.4.0'
 
-mainClassName = 'de.jensd.fx.glyphs.browser.GlyphsBrowserApp'
-sourceCompatibility = '1.8'
+// tag::moduleName[]
+//javaModule.name = 'fontawesomefx.glyphsbrowser'
+// end::moduleName[]
+
+ext.moduleName = 'fontawesomefx.glyphsbrowser'
+
+sourceCompatibility = '9'
+targetCompatibility = '9'
+compileJava.options.fork = true
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
-if (!hasProperty('mainClass')) {
-    ext.mainClass = 'de.jensd.fx.glyphs.browser.GlyphsBrowserApp'
-}
-
-task execute(type:JavaExec) {
-    main = mainClass
-    classpath = sourceSets.main.runtimeClasspath
-}
 
 dependencies {
-    compile 'de.jensd:fontawesomefx-emojione:2.2.7-2'
-    compile 'de.jensd:fontawesomefx-fontawesome:4.7.0-5'
-    compile 'de.jensd:fontawesomefx-icons525:3.0.0-4'
-    compile 'de.jensd:fontawesomefx-materialdesignfont:1.7.22-4'
-    compile 'de.jensd:fontawesomefx-materialicons:2.2.0-5'
-    compile 'de.jensd:fontawesomefx-octicons:4.3.0-5'
-    compile 'de.jensd:fontawesomefx-weathericons:2.0.10-5'
-    compile 'de.jensd:fontawesomefx-controls:8.15'
-    compile 'org.controlsfx:controlsfx:8.40.11'
+    /*compile 'org.controlsfx:controlsfx:9.0.0'
+    compile 'de.jensd:fontawesomefx-emojione:3.1.1-9.1.2'
+    compile 'de.jensd:fontawesomefx-fontawesome:4.7.0-9.1.2'
+    compile 'de.jensd:fontawesomefx-icons525:4.2.0-9.1.2'
+    compile 'de.jensd:fontawesomefx-materialdesignfont:2.0.26-9.1.2'
+    compile 'de.jensd:fontawesomefx-materialicons:2.2.0-9.1.2'
+    compile 'de.jensd:fontawesomefx-octicons:4.3.0-9.1.2'
+    compile 'de.jensd:fontawesomefx-weathericons:2.0.10-9.1.2'
+    compile 'de.jensd:fontawesomefx-commons:9.1.2'
+    compile 'de.jensd:fontawesomefx-controls:9.1.2'*/
+    compile 'org.controlsfx:controlsfx:9.0.0'
+    compile 'de.jensd:fontawesomefx-emojione:3.1.1-9.1.2'
+    compile 'de.jensd:fontawesomefx-fontawesome:4.7.0-9.1.2'
+    compile 'de.jensd:fontawesomefx-icons525:4.2.0-9.1.2'
+    compile 'de.jensd:fontawesomefx-materialdesignfont:2.0.26-9.1.2'
+    compile 'de.jensd:fontawesomefx-materialicons:2.2.0-9.1.2'
+    compile 'de.jensd:fontawesomefx-octicons:4.3.0-9.1.2'
+    compile 'de.jensd:fontawesomefx-weathericons:2.0.10-9.1.2'
+    compile 'de.jensd:fontawesomefx-commons:9.1.2'
+    compile 'de.jensd:fontawesomefx-controls:9.1.2'
 }
+
+
+compileJava {
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.asPath,
+                '--add-exports', 'javafx.base/com.sun.javafx.runtime=controlsfx',
+                '--add-opens', 'javafx.graphics/com.sun.javafx.css=controlsfx',
+        ]
+        classpath = files()
+    }
+}
+
+
+mainClassName = "$moduleName/de.jensd.fx.glyphs.browser.GlyphsBrowserApp" // <1>
+
+run {
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        jvmArgs = [
+                '--module-path', classpath.asPath,
+                '--module', mainClassName,
+                '-Xdebug',
+                '-Xrunjdwp:server=y,transport=dt_socket,address=8000,server=y,suspend=n'
+        ]
+        classpath = files()
+    }
+}
+
+// tag::startScripts[]
+startScripts {
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        classpath = files()
+        defaultJvmOpts = [
+                '--module-path', 'APP_HOME_LIBS',  // <1>
+                '--module', mainClassName
+        ]
+    }
+    doLast {
+        def bashFile = new File(outputDir, applicationName)
+        String bashContent = bashFile.text
+        bashFile.text = bashContent.replaceFirst('APP_HOME_LIBS', Matcher.quoteReplacement('$APP_HOME/lib'))
+
+        def batFile = new File(outputDir, applicationName + ".bat")
+        String batContent = batFile.text
+        batFile.text = batContent.replaceFirst('APP_HOME_LIBS', Matcher.quoteReplacement('%APP_HOME%\\lib'))
+    }
+}
+// end::startScripts[]
+
+
+
